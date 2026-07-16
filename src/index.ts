@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
 import cors from '@fastify/cors';
+import fastifyJwt from '@fastify/jwt';
 import { prisma } from './utils/db';
 import dotenv from 'dotenv';
 import fileRoutes from './routes/fileRoutes';
@@ -23,8 +24,8 @@ fastify.register(multipart, {
   }
 });
 
-fastify.register(require('@fastify/jwt'), {
-  secret: process.env.AUTH_SECRET || 'super_secret_fallback'
+fastify.register(fastifyJwt, {
+  secret: process.env.JWT_SECRET || 'super_secret_fallback'
 });
 
 // Decorate request with authenticate method

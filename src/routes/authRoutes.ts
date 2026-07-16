@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import '@fastify/jwt';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../utils/db';
 

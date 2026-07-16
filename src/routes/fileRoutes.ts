@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import '@fastify/jwt';
 import { FileService } from '../services/FileService';
 import { prisma } from '../utils/db';
 const fileService = new FileService();
