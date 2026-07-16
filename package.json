@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "worker:start": "node dist/workers/replicationWorker.js",
+    "start": "node dist/src/index.js",
+    "worker:start": "node dist/src/workers/replicationWorker.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
