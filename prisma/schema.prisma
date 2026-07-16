@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String   // Hashed password
+  role      String   @default("USER") // USER, ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  files     File[]
+}
+
+model File {
+  id           String    @id @default(uuid())
+  originalName String
+  mimeType     String
+  size         BigInt
+  hash         String    // SHA-256 of entire file
+  status       String    @default("UPLOADING") // UPLOADING, READY, CORRUPTED
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  chunks       Chunk[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Chunk {
+  id           String    @id @default(uuid())
+  fileId       String
+  file         File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  chunkIndex   Int
+  size         Int
+  hash         String    // SHA-256 of the chunk
+  status       String    @default("PENDING") // PENDING, UPLOADED, CORRUPTED
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  replications Replication[]
+}
+
+model StorageProvider {
+  id           String    @id @default(uuid())
+  name         String    @unique // e.g., "Discord Main"
+  type         String    // "DISCORD", "S3", etc.
+  config       Json?     // Provider-specific settings
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  replications Replication[]
+}
+
+model Replication {
+  id                String          @id @default(uuid())
+  chunkId           String
+  chunk             Chunk           @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  providerId        String
+  provider          StorageProvider @relation(fields: [providerId], references: [id])
+  externalId        String          // ID on the provider (e.g., Discord Message ID)
+  externalUrl       String?         // Direct URL if available
+  status            String          @default("READY") // READY, MISSING, CORRUPTED
+  lastVerifiedAt    DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([chunkId, providerId])
+}
