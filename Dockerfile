@@ -12,8 +12,8 @@ RUN npm install
 # Copy source and prisma schema
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Generate Prisma client (needs a dummy URL at build time since real secrets aren't available)
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Build TypeScript code
 RUN npm run build
