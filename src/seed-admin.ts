@@ -11,32 +11,36 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function seedAdmin() {
-  const email = 'batman69';
-  const password = 'Winedine@69';
-  const name = 'Admin';
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+  const name = process.env.ADMIN_NAME || 'Admin';
+
+  if (!email || !password) {
+    console.log('[SeedAdmin] ADMIN_EMAIL or ADMIN_PASSWORD not set — skipping admin seed.');
+    await pool.end();
+    return;
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-
   const existing = await prisma.user.findUnique({ where: { email } });
 
   if (existing) {
-    // Promote to admin if already exists
     await prisma.user.update({
       where: { email },
       data: { role: 'ADMIN', password: hashedPassword }
     });
-    console.log(`✅ User "${email}" updated to ADMIN role.`);
+    console.log(`[SeedAdmin] User "${email}" updated to ADMIN role.`);
   } else {
     await prisma.user.create({
       data: { email, password: hashedPassword, name, role: 'ADMIN' }
     });
-    console.log(`✅ Admin user "${email}" created successfully.`);
+    console.log(`[SeedAdmin] Admin user "${email}" created successfully.`);
   }
 
   await pool.end();
 }
 
 seedAdmin().catch((err) => {
-  console.error('❌ Seed failed:', err);
+  console.error('[SeedAdmin] Seed failed:', err);
   process.exit(1);
 });
