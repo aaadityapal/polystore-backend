@@ -34,6 +34,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.js ./prisma.config.js
 
 # Create a local backups directory for local fallback storage if needed
 RUN mkdir -p /app/backups
