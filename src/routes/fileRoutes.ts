@@ -96,9 +96,9 @@ export default async function fileRoutes(fastify: FastifyInstance) {
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = (request as any).user;
     
-    // Returns list of files (for dashboard) belonging only to the authenticated user
+    // Returns list of files (for dashboard) — excludes soft-deleted files
     const files = await prisma.file.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, deletedAt: null },
       orderBy: { createdAt: 'desc' }
     });
     
@@ -108,6 +108,30 @@ export default async function fileRoutes(fastify: FastifyInstance) {
       size: f.size.toString()
     }));
     return reply.send({ success: true, files: serialized });
+  });
+
+  // DELETE /api/files/:id — Soft delete (sets deletedAt, never removes from Discord)
+  fastify.delete('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const user = (request as any).user;
+    const { id } = request.params;
+
+    try {
+      const file = await prisma.file.findUnique({ where: { id } });
+
+      if (!file || file.userId !== user.id) {
+        return reply.status(404).send({ success: false, error: 'File not found or unauthorized' });
+      }
+
+      await prisma.file.update({
+        where: { id },
+        data: { deletedAt: new Date() }
+      });
+
+      return reply.send({ success: true, message: 'File deleted' });
+    } catch (err: any) {
+      fastify.log.error(err);
+      return reply.status(500).send({ success: false, error: err.message });
+    }
   });
 
   // Test route to manually trigger integrity check
