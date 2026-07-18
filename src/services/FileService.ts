@@ -6,7 +6,7 @@ import crypto from 'crypto';
 
 // ─── Chunk sizes ──────────────────────────────────────────────────────────────
 const DISCORD_CHUNK_SIZE  = 8 * 1024 * 1024;          //  8 MB  — Discord bot limit
-const TELEGRAM_CHUNK_SIZE = 50 * 1024 * 1024;        //  50 MB — Safe limit for 512MB RAM servers
+const TELEGRAM_CHUNK_SIZE = 19 * 1024 * 1024;        //  19 MB — Telegram Bot API download limit is 20MB
 
 // ─── Routing threshold ────────────────────────────────────────────────────────
 const TELEGRAM_THRESHOLD = 500 * 1024 * 1024;          //  500 MB
