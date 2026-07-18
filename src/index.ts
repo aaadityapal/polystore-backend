@@ -15,7 +15,9 @@ const fastify: FastifyInstance = Fastify({
 
 // Register plugins
 fastify.register(cors, {
-  origin: '*', // For development, allow all
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
 fastify.register(multipart, {
