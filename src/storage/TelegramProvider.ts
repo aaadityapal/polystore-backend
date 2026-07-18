@@ -48,10 +48,13 @@ export class TelegramProvider implements IStorageProvider {
     form.append('document', chunkBuffer, { filename: fileName, contentType: 'application/octet-stream' });
 
     const res = await axios.post(`${this.apiBase}/sendDocument`, form, {
-      headers: form.getHeaders(),
+      headers: {
+        ...form.getHeaders(),
+        'Content-Length': form.getLengthSync()
+      },
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-      timeout: 0, // no timeout for large chunks
+      timeout: 120000, // 2 minutes timeout just in case
     });
 
     if (!res.data.ok) {
