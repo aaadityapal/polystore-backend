@@ -91,7 +91,7 @@ export class TelegramProvider implements IStorageProvider {
 
   public async deleteChunk(externalId: string): Promise<void> {
     // externalId = "msgId:fileId"
-    const messageId = externalId.includes(':') ? externalId.split(':')[0] : externalId;
+    const messageId = externalId.includes(':') ? (externalId.split(':')[0] ?? externalId) : externalId;
     try {
       await axios.post(`${this.apiBase}/deleteMessage`, {
         chat_id: this.channelId,
