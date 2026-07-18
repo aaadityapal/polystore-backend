@@ -91,7 +91,8 @@ export class FileService {
     });
 
     try {
-      let buffer = Buffer.alloc(0);
+      let currentChunks: Buffer[] = [];
+      let currentChunksSize = 0;
       const fileHasher = crypto.createHash('sha256');
       let totalSize = 0n;
       let chunkIndex = 0;
@@ -99,19 +100,35 @@ export class FileService {
       for await (const chunkData of fileStream) {
         fileHasher.update(chunkData);
         totalSize += BigInt(chunkData.length);
-        buffer = Buffer.concat([buffer, chunkData]);
+        
+        currentChunks.push(chunkData);
+        currentChunksSize += chunkData.length;
 
-        while (buffer.length >= chunkSize) {
-          const chunkToUpload = buffer.subarray(0, chunkSize);
-          buffer = buffer.subarray(chunkSize);
+        if (currentChunksSize >= chunkSize) {
+          let buffer = Buffer.concat(currentChunks);
           
-          await this.processChunk(file.id, chunkToUpload, chunkIndex, providerRecord.id, provider);
-          chunkIndex++;
+          while (buffer.length >= chunkSize) {
+            const chunkToUpload = buffer.subarray(0, chunkSize);
+            buffer = buffer.subarray(chunkSize);
+            
+            await this.processChunk(file.id, chunkToUpload, chunkIndex, providerRecord.id, provider);
+            chunkIndex++;
+          }
+          
+          // Keep the remainder for the next batch (make a copy to free the large buffer)
+          if (buffer.length > 0) {
+            currentChunks = [Buffer.from(buffer)];
+            currentChunksSize = buffer.length;
+          } else {
+            currentChunks = [];
+            currentChunksSize = 0;
+          }
         }
       }
 
-      if (buffer.length > 0) {
-        await this.processChunk(file.id, buffer, chunkIndex, providerRecord.id, provider);
+      if (currentChunksSize > 0) {
+        const finalBuffer = Buffer.concat(currentChunks);
+        await this.processChunk(file.id, finalBuffer, chunkIndex, providerRecord.id, provider);
       }
 
       // 4. Finalize file record
