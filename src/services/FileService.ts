@@ -58,25 +58,13 @@ export class FileService {
     userId: string,
     originalName: string,
     mimeType: string,
-    fileStream: AsyncIterable<Buffer>
+    fileStream: AsyncIterable<Buffer>,
+    fileSizeHint: number
   ) {
-    // 1. Buffer the entire stream so we know total size before picking provider
-    const chunks: Buffer[] = [];
-    const fileHasher = crypto.createHash('sha256');
+    // 1. Select provider based on total size hint
+    const { provider, chunkSize } = this.selectProvider(fileSizeHint);
 
-    for await (const chunk of fileStream) {
-      fileHasher.update(chunk);
-      chunks.push(chunk);
-    }
-
-    const fullBuffer  = Buffer.concat(chunks);
-    const totalSize   = fullBuffer.length;
-    const finalHash   = fileHasher.digest('hex');
-
-    // 2. Select provider based on total size
-    const { provider, chunkSize } = this.selectProvider(totalSize);
-
-    // 3. Fetch or create StorageProvider DB record
+    // 2. Fetch or create StorageProvider DB record
     let providerRecord = await prisma.storageProvider.findFirst({
       where: { type: provider.type },
     });
@@ -90,7 +78,7 @@ export class FileService {
       });
     }
 
-    // 4. Create file record
+    // 3. Create file record
     const file = await prisma.file.create({
       data: {
         originalName,
@@ -103,17 +91,31 @@ export class FileService {
     });
 
     try {
+      let buffer = Buffer.alloc(0);
+      const fileHasher = crypto.createHash('sha256');
+      let totalSize = 0n;
       let chunkIndex = 0;
-      let offset     = 0;
 
-      while (offset < fullBuffer.length) {
-        const slice = fullBuffer.subarray(offset, offset + chunkSize);
-        await this.processChunk(file.id, slice, chunkIndex, providerRecord.id, provider);
-        offset += chunkSize;
-        chunkIndex++;
+      for await (const chunkData of fileStream) {
+        fileHasher.update(chunkData);
+        totalSize += BigInt(chunkData.length);
+        buffer = Buffer.concat([buffer, chunkData]);
+
+        while (buffer.length >= chunkSize) {
+          const chunkToUpload = buffer.subarray(0, chunkSize);
+          buffer = buffer.subarray(chunkSize);
+          
+          await this.processChunk(file.id, chunkToUpload, chunkIndex, providerRecord.id, provider);
+          chunkIndex++;
+        }
       }
 
-      // 5. Finalize file record
+      if (buffer.length > 0) {
+        await this.processChunk(file.id, buffer, chunkIndex, providerRecord.id, provider);
+      }
+
+      // 4. Finalize file record
+      const finalHash = fileHasher.digest('hex');
       const updatedFile = await prisma.file.update({
         where: { id: file.id },
         data: { size: totalSize, hash: finalHash, status: 'READY' },

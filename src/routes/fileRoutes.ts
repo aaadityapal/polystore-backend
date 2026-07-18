@@ -37,11 +37,13 @@ export default async function fileRoutes(fastify: FastifyInstance) {
         const { filename, mimetype, file } = part;
         
         try {
+          const fileSizeHint = Number(request.headers['content-length']) || 0;
           const resultFile = await fileService.uploadFile(
             user.id,
             filename,
             mimetype,
-            file
+            file,
+            fileSizeHint
           );
           
           return reply.send({ success: true, file: resultFile });
