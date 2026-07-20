@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: polystore
+      POSTGRES_PASSWORD: polystore_password
+      POSTGRES_DB: polystore
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://polystore:polystore_password@db:5432/polystore?schema=public
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHANNEL_ID=${TELEGRAM_CHANNEL_ID}
+      - PORT=8000
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
