@@ -21,9 +21,12 @@ services:
       - DATABASE_URL=postgresql://polystore:polystore_password@db:5432/polystore?schema=public
       - JWT_SECRET=${JWT_SECRET:-supersecretkey}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
       - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
+      - DISCORD_BACKUP_CHANNEL_ID=${DISCORD_BACKUP_CHANNEL_ID}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHANNEL_ID=${TELEGRAM_CHANNEL_ID}
+      - AUTH_SECRET=${AUTH_SECRET}
       - PORT=8000
     depends_on:
       - db
